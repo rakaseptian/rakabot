@@ -30,20 +30,31 @@ if [ -z "$COMFY_DIR" ]; then
 fi
 
 # Cari Python environment yang punya PyTorch & CUDA
-# (biasanya ada venv di volume)
+# RTX 50-series bisa pakai nama venv aneh (.venv-cu128 walau PyTorch cu130), jadi probe file.
 PYTHON_BIN="python3"
-if [ -f "$COMFY_DIR/venv/bin/python3" ]; then
-    PYTHON_BIN="$COMFY_DIR/venv/bin/python3"
-    echo "[OK] Pakai python dari volume venv: $PYTHON_BIN"
-elif [ -f "/runpod-volume/venv/bin/python3" ]; then
-    PYTHON_BIN="/runpod-volume/venv/bin/python3"
-    echo "[OK] Pakai python dari root venv: $PYTHON_BIN"
-fi
+for candidate in \
+    "$COMFY_DIR/.venv/bin/python3" \
+    "$COMFY_DIR/.venv-cu130/bin/python3" \
+    "$COMFY_DIR/.venv-cu128/bin/python3" \
+    "$COMFY_DIR/venv/bin/python3" \
+    /runpod-volume/venv/bin/python3; do
+    if [ -f "$candidate" ]; then
+        PYTHON_BIN="$candidate"
+        echo "[OK] Pakai python ComfyUI: $PYTHON_BIN"
+        break
+    fi
+done
+
+# Handler harus menulis file input/output ke ComfyUI yang sama.
+export COMFY_ROOT="$COMFY_DIR"
 
 # Pastikan workflow_api.json terpasang
 if [ -f "/workflow_api.json" ]; then
     export WORKFLOW_PATH="/workflow_api.json"
 fi
+
+echo "COMFY_ROOT=$COMFY_ROOT"
+echo "WORKFLOW_PATH=$WORKFLOW_PATH"
 
 # Jalankan ComfyUI di background
 echo "Mulai ComfyUI..."
