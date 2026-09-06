@@ -94,17 +94,33 @@ def _comfy_get(path, timeout=60):
         return json.loads(r.read())
 
 
-def wait_for_comfy(timeout=300):
+def _read_comfy_log(n=80):
+    """Ambil ekor log ComfyUI untuk diagnosa."""
+    try:
+        with open("/tmp/comfyui.log", "r", errors="ignore") as f:
+            lines = f.read().strip().splitlines()
+        return "\n".join(lines[-n:])
+    except Exception as e:
+        return f"(tidak bisa baca /tmp/comfyui.log: {e})"
+
+
+def wait_for_comfy(timeout=600):
     """Tunggu ComfyUI siap."""
     start = time.time()
+    last_err = None
     while time.time() - start < timeout:
         try:
             _comfy_get("/system_stats", timeout=5)
             log.info("ComfyUI ready")
             return True
-        except Exception:
-            time.sleep(2)
-    raise RuntimeError("ComfyUI tidak siap dalam waktu yang ditentukan")
+        except Exception as e:
+            last_err = e
+            time.sleep(5)
+    raise RuntimeError(
+        "ComfyUI tidak siap dalam waktu yang ditentukan\n"
+        f"last_error={last_err}\n"
+        f"comfy_log:\n{_read_comfy_log()}"
+    )
 
 
 def upload_input(filename, data):

@@ -56,17 +56,20 @@ fi
 echo "COMFY_ROOT=$COMFY_ROOT"
 echo "WORKFLOW_PATH=$WORKFLOW_PATH"
 
-# Jalankan ComfyUI di background
+# Jalankan ComfyUI di background (terpisah dari session shell)
 echo "Mulai ComfyUI..."
 cd "$COMFY_DIR"
-nohup "$PYTHON_BIN" main.py \
+setsid "$PYTHON_BIN" main.py \
     --listen 127.0.0.1 \
     --port 8188 \
     --disable-auto-launch \
-    > /tmp/comfyui.log 2>&1 &
+    > /tmp/comfyui.log 2>&1 < /dev/null &
 
 COMFY_PID=$!
 echo "ComfyUI PID: $COMFY_PID"
+sleep 5
+echo "--- cek awal comfyui.log ---"
+tail -20 /tmp/comfyui.log 2>/dev/null || true
 
 # Jangan tunggu ComfyUI di fase init serverless.
 # RunPod bisa menandai worker unhealthy kalau handler belum start cepat.
