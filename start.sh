@@ -29,27 +29,50 @@ if [ -z "$COMFY_DIR" ]; then
     exit 1
 fi
 
-# Cari Python environment yang punya PyTorch & CUDA
-# RTX 50-series bisa pakai nama venv aneh (.venv-cu128 walau PyTorch cu130), jadi probe file.
-PYTHON_BIN="python3"
-for candidate in \
-    "$COMFY_DIR/.venv/bin/python3" \
-    "$COMFY_DIR/.venv-cu130/bin/python3" \
-    "$COMFY_DIR/.venv-cu128/bin/python3" \
-    "$COMFY_DIR/venv/bin/python3" \
-    /runpod-volume/venv/bin/python3; do
-    if [ -f "$candidate" ]; then
+# Cari Python environment yang punya PyTorch.
+# RTX 50-series bisa pakai nama venv aneh (.venv-cu128 walau PyTorch cu130),
+# jadi cari semua kandidat lalu PILIH yang benar-benar bisa import torch.
+echo "Mencari python ComfyUI yang punya torch..."
+CANDIDATES=(
+    "$COMFY_DIR/.venv/bin/python3"
+    "$COMFY_DIR/.venv-cu130/bin/python3"
+    "$COMFY_DIR/.venv-cu128/bin/python3"
+    "$COMFY_DIR/venv/bin/python3"
+    "/runpod-volume/runpod-slim/.venv/bin/python3"
+    "/runpod-volume/venv/bin/python3"
+)
+# Tambah hasil pencarian otomatis (venv bisa ada di lokasi tak terduga)
+while IFS= read -r found; do
+    CANDIDATES+=("$found")
+done < <(find /runpod-volume /workspace -maxdepth 5 -type f -path "*/.venv*/bin/python3" 2>/dev/null | head -20)
+while IFS= read -r found; do
+    CANDIDATES+=("$found")
+done < <(find /runpod-volume /workspace -maxdepth 5 -type f -path "*/venv/bin/python3" 2>/dev/null | head -20)
+
+PYTHON_BIN=""
+for candidate in "${CANDIDATES[@]}"; do
+    [ -f "$candidate" ] || continue
+    if "$candidate" -c "import torch" >/dev/null 2>&1; then
         PYTHON_BIN="$candidate"
-        echo "[OK] Pakai python ComfyUI: $PYTHON_BIN"
+        echo "[OK] Python ComfyUI ditemukan: $PYTHON_BIN"
         break
     fi
 done
 
-# Install dependency yang kadang hilang di venv ComfyUI (sqlalchemy dipakai app/assets).
-# Hanya jalan kalau modul belum ada, supaya startup tetap cepat.
-echo "Cek dependency sqlalchemy di venv ComfyUI..."
-"$PYTHON_BIN" -c "import sqlalchemy" 2>/dev/null \
-  || "$PYTHON_BIN" -m pip install --no-cache-dir sqlalchemy 2>&1 | tail -5
+if [ -z "$PYTHON_BIN" ]; then
+    echo "[FATAL] Tidak menemukan python ComfyUI yang punya torch!"
+    echo "Kandidat yang dicoba:"
+    for c in "${CANDIDATES[@]}"; do echo "  - $c"; done
+    exit 1
+fi
+
+# Install dependency ringan yang kadang hilang di venv ComfyUI.
+for mod in sqlalchemy filelock alembic; do
+    "$PYTHON_BIN" -c "import $mod" >/dev/null 2>&1 || {
+        echo "Install modul hilang: $mod"
+        "$PYTHON_BIN" -m pip install --no-cache-dir "$mod" 2>&1 | tail -3
+    }
+done
 
 # Handler harus menulis file input/output ke ComfyUI yang sama.
 export COMFY_ROOT="$COMFY_DIR"
