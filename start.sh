@@ -68,23 +68,8 @@ nohup "$PYTHON_BIN" main.py \
 COMFY_PID=$!
 echo "ComfyUI PID: $COMFY_PID"
 
-# Tunggu sampai ComfyUI siap menerima request
-echo "Menunggu ComfyUI siap..."
-READY=0
-for i in $(seq 1 120); do
-    if curl -s --max-time 3 http://127.0.0.1:8188/system_stats > /dev/null 2>&1; then
-        echo "[READY] ComfyUI aktif ($((i * 2))s)"
-        READY=1
-        break
-    fi
-    sleep 2
-done
-
-if [ "$READY" = "0" ]; then
-    echo "[WARN] ComfyUI belum merespons dalam 240s, cek log:"
-    tail -40 /tmp/comfyui.log 2>/dev/null || true
-fi
-
-# Jalankan RunPod handler
-echo "Mulai RunPod Serverless Handler..."
+# Jangan tunggu ComfyUI di fase init serverless.
+# RunPod bisa menandai worker unhealthy kalau handler belum start cepat.
+# Handler sendiri akan wait_for_comfy() saat job masuk.
+echo "Mulai RunPod Serverless Handler segera..."
 exec python3 /handler.py
