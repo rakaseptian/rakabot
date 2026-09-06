@@ -45,6 +45,12 @@ for candidate in \
     fi
 done
 
+# Install dependency yang kadang hilang di venv ComfyUI (sqlalchemy dipakai app/assets).
+# Hanya jalan kalau modul belum ada, supaya startup tetap cepat.
+echo "Cek dependency sqlalchemy di venv ComfyUI..."
+"$PYTHON_BIN" -c "import sqlalchemy" 2>/dev/null \
+  || "$PYTHON_BIN" -m pip install --no-cache-dir sqlalchemy 2>&1 | tail -5
+
 # Handler harus menulis file input/output ke ComfyUI yang sama.
 export COMFY_ROOT="$COMFY_DIR"
 
