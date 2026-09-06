@@ -104,6 +104,22 @@ def _read_comfy_log(n=80):
         return f"(tidak bisa baca /tmp/comfyui.log: {e})"
 
 
+def _check_missing_modules():
+    """Cek modul penting ComfyUI yang belum terpasang."""
+    wanted = [
+        "torch", "sqlalchemy", "filelock", "alembic", "yaml",
+        "PIL", "numpy", "safetensors", "transformers", "aiohttp",
+        "requests", "scipy", "comfy", "app",
+    ]
+    py = os.environ.get("COMFY_PYTHON") or "python3"
+    missing = []
+    for m in wanted:
+        rc = os.system(f'{py} -c "import {m}" >/dev/null 2>&1')
+        if rc != 0:
+            missing.append(m)
+    return py, missing
+
+
 def wait_for_comfy(timeout=600):
     """Tunggu ComfyUI siap."""
     start = time.time()
@@ -116,9 +132,12 @@ def wait_for_comfy(timeout=600):
         except Exception as e:
             last_err = e
             time.sleep(5)
+    py, missing = _check_missing_modules()
     raise RuntimeError(
         "ComfyUI tidak siap dalam waktu yang ditentukan\n"
         f"last_error={last_err}\n"
+        f"comfy_python={py}\n"
+        f"missing_modules={missing}\n"
         f"comfy_log:\n{_read_comfy_log()}"
     )
 
@@ -229,6 +248,16 @@ def upload_to_s3(path, key):
 # ===================== HANDLER =====================
 def handler(job):
     inp = job.get("input", {}) or {}
+
+    # Mode diagnostik: cek modul tanpa render
+    if inp.get("diag"):
+        py, missing = _check_missing_modules()
+        return {
+            "comfy_python": py,
+            "comfy_root": COMFY_ROOT,
+            "missing_modules": missing,
+            "comfy_log_tail": _read_comfy_log(40),
+        }
 
     # --- Validasi input ---
     if not inp.get("image"):

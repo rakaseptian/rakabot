@@ -66,6 +66,15 @@ if [ -z "$PYTHON_BIN" ]; then
     exit 1
 fi
 
+# Export python ComfyUI supaya handler bisa dipakai diagnosa
+export COMFY_PYTHON="$PYTHON_BIN"
+
+# Pasang semua dependency ComfyUI dari requirements.txt (paling aman & lengkap)
+if [ -f "$COMFY_DIR/requirements.txt" ]; then
+    echo "Install ComfyUI requirements.txt ..."
+    "$PYTHON_BIN" -m pip install --no-cache-dir -r "$COMFY_DIR/requirements.txt" 2>&1 | tail -5
+fi
+
 # Install dependency ringan yang kadang hilang di venv ComfyUI.
 for mod in sqlalchemy filelock alembic; do
     "$PYTHON_BIN" -c "import $mod" >/dev/null 2>&1 || {
