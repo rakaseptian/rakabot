@@ -1,0 +1,13 @@
+{
+  "endpoint_id": "nkbc243n1g0jht",
+  "endpoint_name": "akarai-wan22-multi-1788785262",
+  "template_id": "n7r0pwv1f4",
+  "image": "ghcr.io/rakaseptian/rakabot:latest",
+  "volume_id": "7p0yl3jbav",
+  "gpu_priority": [
+    "NVIDIA GeForce RTX 5090",
+    "NVIDIA RTX A6000"
+  ],
+  "run_url": "https://api.runpod.ai/v2/nkbc243n1g0jht/run",
+  "status_url": "https://api.runpod.ai/v2/nkbc243n1g0jht/status"
+}

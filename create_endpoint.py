@@ -26,7 +26,7 @@ VOLUME_ID = '7p0yl3jbav'      # Network Volume 100GB (EU-RO-1)
 DATACENTER = 'EU-RO-1'         # HARUS sama dengan volume!
 
 # GPU: RTX 5090 32GB (sudah terbukti di pod)
-GPU_IDS = ['NVIDIA RTX 5090']
+GPU_IDS = ['NVIDIA GeForce RTX 5090']
 
 ENDPOINT_NAME = 'akarai-wan22-animate'
 
@@ -68,18 +68,19 @@ def main():
     # 1. Buat template
     print('[1/3] Membuat template...')
     tpl_payload = {
-        'name': f'{ENDPOINT_NAME}-tpl',
+        'name': f'{ENDPOINT_NAME}-tpl-{int(time.time())}',
         'imageName': IMAGE,
         'isServerless': True,
         'containerDiskInGb': 20,
         'volumeInGb': 0,
         'volumeMountPath': '/runpod-volume',
-        'dockerArgs': '',
-        'ports': '',
-        'env': [
-            {'key': 'MODE', 'value': 'volume'},
-            {'key': 'RUNPOD_DEBUG_LEVEL', 'value': 'debug'},
-        ],
+        # CATATAN schema RunPod:
+        #   env   = OBJECT  {...}
+        #   ports = ARRAY   [...]
+        'env': {
+            'MODE': 'volume',
+            'RUNPOD_DEBUG_LEVEL': 'debug',
+        },
     }
 
     try:
@@ -95,7 +96,7 @@ def main():
     ep_payload = {
         'name': ENDPOINT_NAME,
         'templateId': tpl_id,
-        'gpuIds': GPU_IDS,
+        'gpuTypeIds': GPU_IDS,
         'networkVolumeId': VOLUME_ID,
         'computeType': 'GPU',
         'workersMin': 0,
@@ -103,7 +104,6 @@ def main():
         'idleTimeout': 5,
         'scalerType': 'QUEUE_DELAY',
         'scalerValue': 4,
-        'locations': DATACENTER,
         'flashboot': True,
     }
 
