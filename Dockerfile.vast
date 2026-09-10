@@ -78,6 +78,23 @@ RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/loras/Wa
       "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Wan22_relight/WanAnimate_relight_lora_fp16.safetensors"
 
 # ---------------------------------------------------------------
+# 2b. Model SD1.5 UNTUK BENCHMARK SAJA (~4GB)
+#     PENTING: pyworker benchmark (tier 4) pakai SD1.5 Text2Image.
+#     Image ini hanya punya Wan 2.2 (32GB), jadi tanpa SD1.5
+#     benchmark pasti gagal -> "No successful responses".
+#     Ini bukan untuk produksi — murni agar worker lulus warm-up.
+# ---------------------------------------------------------------
+RUN mkdir -p /workspace/ComfyUI/models/checkpoints && \
+    curl -L --retry 5 --retry-delay 5 -C - \
+      -o /workspace/ComfyUI/models/checkpoints/v1-5-pruned-emaonly.safetensors \
+      "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly.safetensors"
+
+# Benchmark ringan supaya cepat lulus
+ENV BENCHMARK_TEST_WIDTH=512 \
+    BENCHMARK_TEST_HEIGHT=512 \
+    BENCHMARK_TEST_STEPS=8
+
+# ---------------------------------------------------------------
 # 3. Workflow API
 # ---------------------------------------------------------------
 COPY workflow_api.json /workspace/ComfyUI/workflow_api.json
