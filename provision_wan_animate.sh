@@ -51,13 +51,26 @@ fetch() {
 main() {
   log "mulai provisioning"
   [ -f /venv/main/bin/activate ] && . /venv/main/bin/activate
-  mkdir -p "$MODELS_DIR"/{diffusion_models,vae,text_encoders,clip_vision,loras} "$NODES_DIR" "$CKPTS_DIR"
+  # CATATAN: CKPTS_DIR TIDAK dibuat di sini — kalau dibuat lebih dulu, `git clone`
+  # ke folder comfyui_controlnet_aux akan gagal (dir tujuan tidak kosong).
+  # Folder ckpts dibuat otomatis oleh fetch() lewat mkdir -p.
+  mkdir -p "$MODELS_DIR"/{diffusion_models,vae,text_encoders,clip_vision,loras} "$NODES_DIR"
 
   # 1. custom nodes
   for repo in "${NODES[@]}"; do
     name="$(basename "$repo")"
     if [ -d "$NODES_DIR/$name/.git" ]; then
       log "node ada: $name"; (cd "$NODES_DIR/$name" && git pull --ff-only -q) || true
+    elif [ -d "$NODES_DIR/$name" ] && [ ! -f "$NODES_DIR/$name/__init__.py" ]; then
+      # clone parsial/gagal: ambil isi repo ke temp lalu timpa (jangan hapus ckpts)
+      log "perbaiki node: $name"
+      rm -rf "/tmp/fix_$name"
+      if git clone --depth 1 -q "https://github.com/${repo}.git" "/tmp/fix_$name"; then
+        tar -C "/tmp/fix_$name" -cf - . | tar -C "$NODES_DIR/$name" -xf -
+        log "node diperbaiki: $name"
+      else
+        log "perbaikan gagal: $name"
+      fi
     else
       log "clone node: $name"
       git clone --depth 1 -q "https://github.com/${repo}.git" "$NODES_DIR/$name" || log "clone gagal: $name"
