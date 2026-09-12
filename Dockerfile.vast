@@ -165,18 +165,28 @@ RUN echo "=== COMFYUI ===" && \
     echo "=== CUSTOM NODES ===" && \
     ls -la /workspace/ComfyUI/custom_nodes/ 2>/dev/null || echo "no nodes"
 
-# Verifikasi semua custom node BISA di-import oleh ComfyUI (build GAGAL kalau tidak).
+# Verifikasi custom node ADA & dependency-nya terinstall (build GAGAL kalau tidak).
 # Ini menangkap bug dependency (mis. cv2/accelerate hilang) SEBELUM image di-push,
 # sehingga tidak perlu menunggu cold-start 17 menit hanya untuk menemukan node hilang.
+#
+# PENTING: JANGAN panggil nodes.init_extra_nodes() di sini — itu meng-import torch
+# dan menginisialisasi CUDA, padahal runner GitHub TIDAK punya GPU →
+# "RuntimeError: Found no NVIDIA driver on your system" (build gagal palsu).
+# Jadi kita cek dua hal yang GPU-free:
+#   1. dependency penting bisa di-import (sudah di atas, baris ~65)
+#   2. tiap node kunci TERDAFTAR di NODE_CLASS_MAPPINGS sumbernya (grep)
 RUN cd /workspace/ComfyUI && \
-    /venv/main/bin/python -c "import sys; sys.path.insert(0, '/workspace/ComfyUI'); \
-import nodes; nodes.init_extra_nodes(init_custom_nodes=True); \
-want=('DWPreprocessor','PixelPerfectResolution','WanVideoModelLoader','VHS_LoadVideo','ImageResizeKJv2'); \
-got=[n for n in want if n in nodes.NODE_CLASS_MAPPINGS]; \
-print('node kunci terdaftar:', got); \
-missing=[n for n in want if n not in got]; \
-assert not missing, f'FATAL: node hilang: {missing}'; \
-print('SEMUA CUSTOM NODE OK')"
+    /venv/main/bin/python -c "import cv2, accelerate, diffusers, einops, imageio" && \
+    echo "=== verifikasi node kunci terdaftar di sumber ===" && \
+    fail=0; \
+    for n in DWPreprocessor PixelPerfectResolution WanVideoModelLoader VHS_LoadVideo ImageResizeKJv2; do \
+        if grep -rqE "['\"]${n}['\"]" /workspace/ComfyUI/custom_nodes/ 2>/dev/null; then \
+            echo "  OK  $n"; \
+        else \
+            echo "  HILANG  $n"; fail=1; \
+        fi; \
+    done; \
+    test "$fail" -eq 0 && echo "SEMUA CUSTOM NODE OK"
 
 EXPOSE 8188 18188 3000
 
