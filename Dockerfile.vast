@@ -27,8 +27,12 @@ ENV MODEL_DIR=/workspace/ComfyUI/models
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /workspace/ComfyUI
 
 # Dependencies ComfyUI
+# PENTING: ComfyUI dijalankan via `/venv/main/bin/activate` (lihat
+# /opt/supervisor-scripts/comfyui.sh). `pip` biasa menunjuk ke system python
+# (/usr/bin/pip) sehingga dependency TIDAK terlihat oleh ComfyUI.
+# WAJIB pakai pip milik venv runtime: /venv/main/bin/pip
 RUN cd /workspace/ComfyUI && \
-    pip install --no-cache-dir -r requirements.txt
+    /venv/main/bin/pip install --no-cache-dir -r requirements.txt
 
 # ---------------------------------------------------------------
 # 1. Custom nodes
@@ -40,19 +44,25 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes && cd /workspace/ComfyUI/custom_nod
     git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git ; \
     true
 
-# Dependencies custom nodes (best effort)
-# CATATAN: comfyui_controlnet_aux butuh torch/numpy — JANGAN di-upgrade
+# Dependencies custom nodes — WAJIB pakai /venv/main/bin/pip (lihat catatan di atas).
+# JANGAN pakai `|| true`: kegagalan install di sini bikin node hilang diam-diam
+# (kejadian nyata: cv2/accelerate tidak ada -> DWPreprocessor/WanVideoModelLoader
+#  tidak terdaftar -> "ComfyUI node errors: {}").
+# CATATAN: comfyui_controlnet_aux butuh torch/numpy — JANGAN di-upgrade.
 RUN cd /workspace && \
     for d in ComfyUI/custom_nodes/*/; do \
         if [ -f "$d/requirements.txt" ]; then \
             if echo "$d" | grep -q controlnet_aux; then \
                 grep -viE '^(torch|torchvision|numpy)' "$d/requirements.txt" > /tmp/cnaux.txt; \
-                pip install --no-cache-dir -r /tmp/cnaux.txt || true; \
+                /venv/main/bin/pip install --no-cache-dir -r /tmp/cnaux.txt; \
             else \
-                pip install --no-cache-dir -r "$d/requirements.txt" || true; \
+                /venv/main/bin/pip install --no-cache-dir -r "$d/requirements.txt"; \
             fi; \
         fi; \
-    done ; true
+    done
+
+# Verifikasi dependency kritis ADA di venv runtime (build GAGAL kalau tidak)
+RUN /venv/main/bin/python -c "import cv2, accelerate, diffusers, einops; print('deps OK', cv2.__version__)"
 
 # ---------------------------------------------------------------
 # 1b. ckpts DWPose (WAJIB untuk node DWPreprocessor)
@@ -155,6 +165,20 @@ RUN echo "=== COMFYUI ===" && \
     echo "=== CUSTOM NODES ===" && \
     ls -la /workspace/ComfyUI/custom_nodes/ 2>/dev/null || echo "no nodes"
 
+# Verifikasi semua custom node BISA di-import oleh ComfyUI (build GAGAL kalau tidak).
+# Ini menangkap bug dependency (mis. cv2/accelerate hilang) SEBELUM image di-push,
+# sehingga tidak perlu menunggu cold-start 17 menit hanya untuk menemukan node hilang.
+RUN cd /workspace/ComfyUI && \
+    /venv/main/bin/python -c "import sys; sys.path.insert(0, '/workspace/ComfyUI'); \
+import nodes; nodes.init_extra_nodes(init_custom_nodes=True); \
+want=('DWPreprocessor','PixelPerfectResolution','WanVideoModelLoader','VHS_LoadVideo','ImageResizeKJv2'); \
+got=[n for n in want if n in nodes.NODE_CLASS_MAPPINGS]; \
+print('node kunci terdaftar:', got); \
+missing=[n for n in want if n not in got]; \
+assert not missing, f'FATAL: node hilang: {missing}'; \
+print('SEMUA CUSTOM NODE OK')"
+
 EXPOSE 8188 18188 3000
 
 # build trigger: 2026-09-12T09:16:47Z
+# fix: pip venv + deps custom nodes (2026-09-12)
