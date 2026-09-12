@@ -37,16 +37,33 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes && cd /workspace/ComfyUI/custom_nod
     git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git ; \
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git ; \
     git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git ; \
-    git clone --depth 1 https://github.com/cubiq/ComfyUI_essentials.git ; \
+    git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git ; \
     true
 
 # Dependencies custom nodes (best effort)
+# CATATAN: comfyui_controlnet_aux butuh torch/numpy — JANGAN di-upgrade
 RUN cd /workspace && \
     for d in ComfyUI/custom_nodes/*/; do \
         if [ -f "$d/requirements.txt" ]; then \
-            pip install --no-cache-dir -r "$d/requirements.txt" || true; \
+            if echo "$d" | grep -q controlnet_aux; then \
+                grep -viE '^(torch|torchvision|numpy)' "$d/requirements.txt" > /tmp/cnaux.txt; \
+                pip install --no-cache-dir -r /tmp/cnaux.txt || true; \
+            else \
+                pip install --no-cache-dir -r "$d/requirements.txt" || true; \
+            fi; \
         fi; \
     done ; true
+
+# ---------------------------------------------------------------
+# 1b. ckpts DWPose (WAJIB untuk node DWPreprocessor)
+#     Tanpa ini workflow Wan Animate gagal di preprocessing pose.
+# ---------------------------------------------------------------
+RUN mkdir -p /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/yolox-onnx \
+             /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/DWPose-TorchScript-BatchSize5 && \
+    curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/yolox-onnx/yolox_l.torchscript.pt \
+      "https://huggingface.co/hr16/yolox-onnx/resolve/main/yolox_l.torchscript.pt" && \
+    curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/DWPose-TorchScript-BatchSize5/dw-ll_ucoco_384_bs5.torchscript.pt \
+      "https://huggingface.co/hr16/DWPose-TorchScript-BatchSize5/resolve/main/dw-ll_ucoco_384_bs5.torchscript.pt"
 
 # ---------------------------------------------------------------
 # 2. Model Wan 2.2 Animate (~32GB) via curl langsung
@@ -139,3 +156,5 @@ RUN echo "=== COMFYUI ===" && \
     ls -la /workspace/ComfyUI/custom_nodes/ 2>/dev/null || echo "no nodes"
 
 EXPOSE 8188 18188 3000
+
+# build trigger: 2026-09-12T09:16:47Z
