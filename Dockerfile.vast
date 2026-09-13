@@ -9,6 +9,12 @@
 #
 # Strategi: SEMUA masuk image (ComfyUI + custom nodes + model ~32GB)
 # Build   : via GitHub Actions (runner punya disk & bandwidth besar)
+#
+# OPTIMASI UKURAN (2026-09-13) — pull lebih cepat & lebih tahan gagal:
+#   - relight lora 1,4GB DIBUANG (tidak dipakai workflow mana pun)
+#   - SD1.5 benchmark fp32 4,3GB -> fp16 asli 2,1GB (hemat ~2,2GB)
+#   - .git + tests/.github semua clone dibuang (hemat ~0,5GB)
+#   - pip cache dibersihkan
 # =====================================================================
 
 FROM vastai/comfy:v0.34.0-cuda-13.2-py312
@@ -24,7 +30,8 @@ ENV MODEL_DIR=/workspace/ComfyUI/models
 # ---------------------------------------------------------------
 # 0. INSTALL COMFYUI (WAJIB — base image tidak menyertakannya)
 # ---------------------------------------------------------------
-RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /workspace/ComfyUI
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /workspace/ComfyUI && \
+    rm -rf /workspace/ComfyUI/.git /workspace/ComfyUI/.github /workspace/ComfyUI/tests
 
 # Dependencies ComfyUI
 # PENTING: ComfyUI dijalankan via `/venv/main/bin/activate` (lihat
@@ -32,7 +39,8 @@ RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git /workspace
 # (/usr/bin/pip) sehingga dependency TIDAK terlihat oleh ComfyUI.
 # WAJIB pakai pip milik venv runtime: /venv/main/bin/pip
 RUN cd /workspace/ComfyUI && \
-    /venv/main/bin/pip install --no-cache-dir -r requirements.txt
+    /venv/main/bin/pip install --no-cache-dir -r requirements.txt && \
+    rm -rf /root/.cache/pip
 
 # ---------------------------------------------------------------
 # 1. Custom nodes
@@ -42,6 +50,7 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes && cd /workspace/ComfyUI/custom_nod
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git ; \
     git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git ; \
     git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git ; \
+    rm -rf /workspace/ComfyUI/custom_nodes/*/.git ; \
     true
 
 # Dependencies custom nodes — WAJIB pakai /venv/main/bin/pip (lihat catatan di atas).
@@ -100,12 +109,8 @@ RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/clip_vis
 RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/loras/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors \
       "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
 
-# LoRA relight 1.4GB
-RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/loras/WanAnimate_relight_lora_fp16.safetensors \
-      "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Wan22_relight/WanAnimate_relight_lora_fp16.safetensors"
-
 # ---------------------------------------------------------------
-# 2b. Model SD1.5 UNTUK BENCHMARK SAJA (~4GB)
+# 2b. Model SD1.5 UNTUK BENCHMARK SAJA (~2GB)
 #     PENTING: pyworker benchmark (tier 4) pakai SD1.5 Text2Image.
 #     Image ini hanya punya Wan 2.2 (32GB), jadi tanpa SD1.5
 #     benchmark pasti gagal -> "No successful responses".
@@ -120,10 +125,7 @@ RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/loras/Wa
 RUN mkdir -p /workspace/ComfyUI/models/checkpoints && \
     curl -L --retry 5 --retry-delay 5 -C - \
       -o /workspace/ComfyUI/models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors \
-      "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly.safetensors" || \
-    curl -L --retry 5 --retry-delay 5 -C - \
-      -o /workspace/ComfyUI/models/checkpoints/v1-5-pruned-emaonly-fp16.safetensors \
-      "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+      "https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors"
 
 # Alias nama lama (symlink) — jaga-jaga kalau resolver minta nama non-fp16
 RUN cd /workspace/ComfyUI/models/checkpoints && \
@@ -164,6 +166,33 @@ RUN echo "=== COMFYUI ===" && \
            /workspace/ComfyUI/models/loras/ && \
     echo "=== CUSTOM NODES ===" && \
     ls -la /workspace/ComfyUI/custom_nodes/ 2>/dev/null || echo "no nodes"
+
+# ---------------------------------------------------------------
+# 4b. GUARD UKURAN (2026-09-13)
+#     Image pernah membengkak 39,6GB -> pull gagal/retry berulang di
+#     host dengan jaringan buruk. Dua penjaga ini mencegah pembengkakan
+#     terjadi diam-diam lagi:
+#       1. relight lora TIDAK BOLEH ada (tidak dipakai workflow)
+#       2. .git semua clone TIDAK BOLEH ada (buang ~0,5GB)
+#     Build GAGAL kalau dilanggar, jadi ketahuan SEBELUM push.
+# ---------------------------------------------------------------
+RUN if [ -e /workspace/ComfyUI/models/loras/WanAnimate_relight_lora_fp16.safetensors ]; then \
+        echo "FATAL: relight lora ada — tidak dipakai workflow, hapus dari Dockerfile!"; exit 1; \
+    fi; \
+    echo "OK: relight lora tidak ada (sesuai rencana)"
+
+RUN n=$(find /workspace/ComfyUI -type d -name .git 2>/dev/null | wc -l); \
+    if [ "$n" -ne 0 ]; then \
+        echo "FATAL: masih ada $n direktori .git — buang supaya image ramping:"; \
+        find /workspace/ComfyUI -type d -name .git; exit 1; \
+    fi; \
+    echo "OK: tidak ada .git tersisa"
+
+# Laporan ukuran akhir — supaya terlihat di log build kalau membengkak
+RUN echo "=== UKURAN IMAGE ===" && \
+    du -sh /workspace/ComfyUI/models/* 2>/dev/null && \
+    echo "--- total ---" && \
+    du -sh /workspace/ComfyUI 2>/dev/null
 
 # Verifikasi custom node ADA & dependency-nya terinstall (build GAGAL kalau tidak).
 # Ini menangkap bug dependency (mis. cv2/accelerate hilang) SEBELUM image di-push,

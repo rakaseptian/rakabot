@@ -2,13 +2,17 @@
 """
 Download semua model Wan 2.2 Animate ke direktori target.
 
-URL sudah DIVERIFIKASI (HTTP 200) per 2026-09-06.
+URL sudah DIVERIFIKASI (HTTP 200) per 2026-09-13.
 
 Cara pakai:
   python3 download_models.py /comfyui/models
   python3 download_models.py /runpod-volume/ComfyUI/models
 
-Total download: ~31GB
+Total download: ~29GB
+
+CATATAN 2026-09-13:
+  - relight lora DIBUANG (1,4GB) — tidak dirujuk workflow mana pun.
+    Kalau nanti butuh relight, tambahkan lagi barisnya di MODELS.
 """
 import os
 import sys
@@ -51,13 +55,6 @@ MODELS = [
         "loras",
         "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
         703,
-    ),
-    (
-        "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/"
-        "LoRAs/Wan22_relight/WanAnimate_relight_lora_fp16.safetensors",
-        "loras",
-        "WanAnimate_relight_lora_fp16.safetensors",
-        1370,
     ),
 ]
 
