@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SRC_TAG: ${{ github.event.inputs.source_tag || 'latest' }}
-      DST_TAG: ${{ github.event.inputs.target_tag || 'v2' }}
+      DST_TAG: ${{ github.event.inputs.target_tag || 'v3' }}
     steps:
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
