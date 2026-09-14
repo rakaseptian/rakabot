@@ -393,7 +393,7 @@
       "fantasytalking_model": null,
       "multitalk_model": null,
       "fantasyportrait_model": null,
-      "model": "Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors",
+      "model": "Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors",
       "base_precision": "fp16_fast",
       "quantization": "disabled",
       "load_device": "offload_device",

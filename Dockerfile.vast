@@ -111,12 +111,10 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/D
 # ---------------------------------------------------------------
 RUN mkdir -p /workspace/ComfyUI/models/diffusion_models /workspace/ComfyUI/models/text_encoders /workspace/ComfyUI/models/vae /workspace/ComfyUI/models/clip_vision /workspace/ComfyUI/models/loras
 
-# Model utama 17.5GB (v1 — DIPERTAHANKAN agar rollback tidak perlu rebuild)
-RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/diffusion_models/Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors \
-      "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors"
-
 # Model v2 17.3GB (2026-09-14: mengikuti workflow TERBARU Pak Raka)
-#   v1 sengaja TIDAK dibuang supaya rollback bisa tanpa rebuild image.
+#   [OPSI A] v1 DIHAPUS dari image (2026-09-14) karena build #14 GAGAL:
+#   "No space left on device" — v1+v2 = ~55GB > kapasitas runner GitHub.
+#   Rollback ke v1 tetap mungkin lewat tag image LAMA (build #13).
 #   v2 justru 1.1GB LEBIH KECIL dari v1 (17.3 vs 18.4 GB).
 RUN curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/diffusion_models/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors \
       "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors" && \
