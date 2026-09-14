@@ -52,6 +52,8 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes && cd /workspace/ComfyUI/custom_nod
     git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git ; \
     git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git ; \
     git clone --depth 1 https://github.com/kijai/ComfyUI-MimicMotionWrapper.git ; \
+    git clone --depth 1 https://github.com/kijai/ComfyUI-WanAnimatePreprocess.git ; \
+    git clone --depth 1 https://github.com/M1kep/ComfyLiterals.git ; \
     rm -rf /workspace/ComfyUI/custom_nodes/*/.git ; \
     true
 
@@ -66,6 +68,9 @@ RUN cd /workspace && \
             if echo "$d" | grep -q controlnet_aux; then \
                 grep -viE '^(torch|torchvision|numpy)' "$d/requirements.txt" > /tmp/cnaux.txt; \
                 /venv/main/bin/pip install --no-cache-dir -r /tmp/cnaux.txt; \
+            elif echo "$d" | grep -q WanAnimatePreprocess; then \
+                grep -viE '^(opencv-python)$' "$d/requirements.txt" > /tmp/wanpre.txt; \
+                /venv/main/bin/pip install --no-cache-dir -r /tmp/wanpre.txt; \
             else \
                 /venv/main/bin/pip install --no-cache-dir -r "$d/requirements.txt"; \
             fi; \
@@ -105,6 +110,26 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/D
     test -e /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose/yolox_l.torchscript.pt && \
     test -e /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose/dw-ll_ucoco_384_bs5.torchscript.pt && \
     echo "OK: model DWPose utk MimicMotion ter-link"
+
+# ---------------------------------------------------------------
+# 1d. Model ONNX untuk PoseAndFaceDetection (2026-09-15)
+#     Mengikuti workflow TERBARU Pak Raka: deteksi wajah pakai
+#     ViTPose + YOLOv10, bukan FaceMaskFromPoseKeypoints (DWPose).
+#     Node OnnxDetectionModelLoader membaca dari ComfyUI/models/detection
+#     (folder ini didaftarkan pack ComfyUI-WanAnimatePreprocess):
+#       vitpose-l-wholebody.onnx  ~1,23 GB  (JunkyByte/easy_ViTPose)
+#       yolov10m.onnx             ~61 MB    (Wan-AI/Wan2.2-Animate-14B)
+#     Nama file HARUS persis ini — dipilih di widget node loader.
+# ---------------------------------------------------------------
+RUN mkdir -p /workspace/ComfyUI/models/detection && \
+    curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/detection/yolov10m.onnx \
+      "https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx" && \
+    test -s /workspace/ComfyUI/models/detection/yolov10m.onnx && \
+    curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/models/detection/vitpose-l-wholebody.onnx \
+      "https://huggingface.co/JunkyByte/easy_ViTPose/resolve/main/onnx/wholebody/vitpose-l-wholebody.onnx" && \
+    test -s /workspace/ComfyUI/models/detection/vitpose-l-wholebody.onnx && \
+    echo "OK: model ONNX pose/face ada:" && \
+    ls -lh /workspace/ComfyUI/models/detection/
 
 # ---------------------------------------------------------------
 # 2. Model Wan 2.2 Animate (~32GB) via curl langsung
@@ -244,7 +269,7 @@ RUN cd /workspace/ComfyUI && \
     /venv/main/bin/python -c "import cv2, accelerate, diffusers, einops, imageio, matplotlib" && \
     echo "=== verifikasi node kunci terdaftar di sumber ===" && \
     fail=0; \
-    for n in DWPreprocessor PixelPerfectResolution WanVideoModelLoader VHS_LoadVideo ImageResizeKJv2 MimicMotionGetPoses; do \
+    for n in DWPreprocessor PixelPerfectResolution WanVideoModelLoader VHS_LoadVideo ImageResizeKJv2 MimicMotionGetPoses OnnxDetectionModelLoader PoseAndFaceDetection DrawViTPose; do \
         if grep -rqE "['\"]${n}['\"]" /workspace/ComfyUI/custom_nodes/ 2>/dev/null; then \
             echo "  OK  $n"; \
         else \
