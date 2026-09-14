@@ -10,9 +10,10 @@ Cara pakai:
 
 Total download: ~29GB
 
-CATATAN 2026-09-13:
-  - relight lora DIBUANG (1,4GB) — tidak dirujuk workflow mana pun.
-    Kalau nanti butuh relight, tambahkan lagi barisnya di MODELS.
+CATATAN 2026-09-14:
+  - relight lora (1,4GB) DITAMBAH BALIK — dipakai workflow BERSAMA lightx2v
+    untuk memperbaiki pencahayaan/warna kulit (strength 0.5-1.0).
+    Sebelumnya dibuang 2026-09-13; kini workflow membutuhkannya.
 """
 import os
 import sys
@@ -55,6 +56,13 @@ MODELS = [
         "loras",
         "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
         703,
+    ),
+    (
+        "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/"
+        "LoRAs/Wan22_relight/WanAnimate_relight_lora_fp16.safetensors",
+        "loras",
+        "WanAnimate_relight_lora_fp16.safetensors",
+        1370,
     ),
 ]
 
