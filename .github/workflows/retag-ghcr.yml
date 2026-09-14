@@ -25,7 +25,7 @@ on:
         required: true
       target_tag:
         description: 'Tag tujuan'
-        default: 'v2'
+        default: 'v3'
         required: true
 
 permissions:
