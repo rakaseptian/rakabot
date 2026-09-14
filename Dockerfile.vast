@@ -51,6 +51,7 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes && cd /workspace/ComfyUI/custom_nod
     git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git ; \
     git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git ; \
     git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git ; \
+    git clone --depth 1 https://github.com/kijai/ComfyUI-MimicMotionWrapper.git ; \
     rm -rf /workspace/ComfyUI/custom_nodes/*/.git ; \
     true
 
@@ -84,6 +85,26 @@ RUN mkdir -p /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/y
       "https://huggingface.co/hr16/yolox-onnx/resolve/main/yolox_l.torchscript.pt" && \
     curl -L --retry 5 --retry-delay 5 -C - -o /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/DWPose-TorchScript-BatchSize5/dw-ll_ucoco_384_bs5.torchscript.pt \
       "https://huggingface.co/hr16/DWPose-TorchScript-BatchSize5/resolve/main/dw-ll_ucoco_384_bs5.torchscript.pt"
+
+# ---------------------------------------------------------------
+# 1c. Model DWPose untuk MimicMotionGetPoses (2026-09-14)
+#     Node MimicMotionGetPoses mencari model di:
+#       <node_dir>/models/DWPose/{yolox_l,dw-ll_ucoco_384_bs5}.torchscript.pt
+#     Kalau tidak ada, node mengunduh saat RUNTIME (butuh internet worker +
+#     menambah detik ke setiap cold-start). Karena kedua model ini SUDAH
+#     diunduh di 1b, cukup symlink -> tidak menambah ukuran image sama sekali.
+#     Nama model di kode node (nodes.py baris ~389) persis:
+#       dw_pose_model = "dw-ll_ucoco_384_bs5.torchscript.pt"
+#       yolo_model    = "yolox_l.torchscript.pt"
+# ---------------------------------------------------------------
+RUN mkdir -p /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose && \
+    ln -sf /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/yolox-onnx/yolox_l.torchscript.pt \
+           /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose/yolox_l.torchscript.pt && \
+    ln -sf /workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux/ckpts/hr16/DWPose-TorchScript-BatchSize5/dw-ll_ucoco_384_bs5.torchscript.pt \
+           /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose/dw-ll_ucoco_384_bs5.torchscript.pt && \
+    test -e /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose/yolox_l.torchscript.pt && \
+    test -e /workspace/ComfyUI/custom_nodes/ComfyUI-MimicMotionWrapper/models/DWPose/dw-ll_ucoco_384_bs5.torchscript.pt && \
+    echo "OK: model DWPose utk MimicMotion ter-link"
 
 # ---------------------------------------------------------------
 # 2. Model Wan 2.2 Animate (~32GB) via curl langsung
@@ -215,10 +236,10 @@ RUN echo "=== UKURAN IMAGE ===" && \
 #   1. dependency penting bisa di-import (sudah di atas, baris ~65)
 #   2. tiap node kunci TERDAFTAR di NODE_CLASS_MAPPINGS sumbernya (grep)
 RUN cd /workspace/ComfyUI && \
-    /venv/main/bin/python -c "import cv2, accelerate, diffusers, einops, imageio" && \
+    /venv/main/bin/python -c "import cv2, accelerate, diffusers, einops, imageio, matplotlib" && \
     echo "=== verifikasi node kunci terdaftar di sumber ===" && \
     fail=0; \
-    for n in DWPreprocessor PixelPerfectResolution WanVideoModelLoader VHS_LoadVideo ImageResizeKJv2; do \
+    for n in DWPreprocessor PixelPerfectResolution WanVideoModelLoader VHS_LoadVideo ImageResizeKJv2 MimicMotionGetPoses; do \
         if grep -rqE "['\"]${n}['\"]" /workspace/ComfyUI/custom_nodes/ 2>/dev/null; then \
             echo "  OK  $n"; \
         else \
