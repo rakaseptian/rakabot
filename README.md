@@ -1,157 +1,101 @@
-# AkarAI Studio - Wan 2.2 Animate Serverless Worker
+# AkarAI Studio — Wan 2.2 Animate Serverless Worker
 
-Worker RunPod Serverless untuk video Wan 2.2 Animate (Mode MOVE).
+Worker serverless **Vast.ai** untuk video Wan 2.2 Animate (Mode MOVE).
+
+> **Jalur produksi = Vast.ai.** File jalur RunPod lama sudah dihapus
+> (arsip: `/home/ubuntu/arsip_runpod_20260914_203850/`). Jalur RunPod **tidak dipakai**.
 
 ## Alur
 
 ```
-Telegram Bot --> POST /run --> Worker
-                                |
-                                v
-                        simpan ref.png + motion.mp4
-                        patch workflow_api.json
-                        submit ke ComfyUI internal :8188
-                        polling /history
-                        ambil MP4 hasil
-                                |
-                                v
-Telegram Bot <-- /status <-- return video (S3 URL / base64)
+Bot Telegram (rakabot) --> vast_wan.py --> Vast.ai Serverless Endpoint 36584
+                                              |
+                                              v
+                                    pyworker (BACKEND=comfyui-json)
+                                    terima workflow_json dari payload
+                                              |
+                                              v
+                                    ComfyUI internal :18188
+                                              |
+                                              v
+                                    video hasil --> Telegram
 ```
-
-## Ringkasan Revisi (v2)
-
-| Item | v1 (salah) | v2 (sekarang) |
-|---|---|---|
-| Model di image | Ya (40GB) | **Tidak** (~8GB image) |
-| Model disimpan | - | Network Volume `/runpod-volume` |
-| URL model | 4 dari 6 salah (404) | **Semua 200 OK** |
-| Cold start | 1-3 menit | Lebih cepat (model sudah di volume) |
 
 ## Isi Folder
 
 | File | Fungsi |
 |---|---|
-| `Dockerfile` | Build image (~8GB) + ComfyUI + custom node |
-| `handler.py` | Entry point RunPod serverless |
-| `start.sh` | Symlink model dari volume, start ComfyUI + worker |
-| `download_models.py` | Download 6 model (~31GB) ke target folder |
-| `workflow_api.json` | Workflow API (30 node) |
+| **`Dockerfile.vast`** | **Build image produksi** — ComfyUI + custom node + model (~36GB) |
+| `.github/workflows/build-vast-image.yml` | CI build & push ke GHCR (otomatis saat `Dockerfile.vast` berubah) |
+| `provision_wan_animate.sh` | Unduh model saat worker pertama nyala (Phase 9) |
+| `download_models.py` | Daftar model + unduhan manual |
+| **`workflow_serverless_animate.json`** | **Workflow aktif** — dikirim `vast_wan.py` sebagai `workflow_json` |
+| `workflow_api.json` | Disalin ke image (`Dockerfile.vast:178`); juga dipakai benchmark |
+| `patches/apply_patches.py` | Patch custom node |
+| `requirements.txt` | Dependensi Python (dipakai `Dockerfile.vast:43`) |
+| `audit_workflow.py` | Audit nilai workflow vs acuan |
 | `fix_widget_names.py` | Konversi `value_N` → nama widget asli |
-| `fetch_and_fix.sh` | Ambil `object_info.json` dari pod + jalankan fix |
-| `patches/apply_patches.py` | Patch lazy `PromptServer.instance` |
-| `test_local.py` | Test endpoint end-to-end |
-| `requirements.txt` | runpod, requests, boto3 |
+| `README.md` | Dokumen ini |
 
-## PENTING - Kerjakan Ini Dulu
+## Image
 
-### 1. Fix nama widget (WAJIB sebelum build)
+- Registry: `ghcr.io/rakaseptian/akarai-wan22-animate:latest`
+- Base: `vastai/comfy:v0.34.0-cuda-13.2-py312`
+- Build: push ke `main` yang menyentuh `Dockerfile.vast` → GH Actions jalan otomatis
+- **Tidak ada `ENTRYPOINT`/`CMD`** → worker memakai **pyworker bawaan image dasar**
+  (`BACKEND=comfyui-json`), yang menerima `workflow_json` **dari payload**.
 
-`workflow_api.json` sekarang masih pakai nama generik
-(`value_0`, `value_2`). ComfyUI butuh nama asli
-(`positive_prompt`, `negative_prompt`, `steps`, `cfg`).
+## Model di image
 
-```bash
-# Nyalakan pod ComfyUI dulu, catat POD_ID
-cd /home/ubuntu/rakabot-serverless
-./fetch_and_fix.sh <POD_ID>
+| Model | Ukuran |
+|---|---|
+| `Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors` (v1) | 18,4 GB |
+| `Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors` (v2) | 17,3 GB |
+| `umt5-xxl-enc-bf16.safetensors` | 10,8 GB |
+| `wan_2.1_vae.safetensors` | 0,25 GB |
+| `clip_vision_h.safetensors` | 1,2 GB |
+| LoRA relight + lightx2v | ~1,4 GB |
+| SD1.5 (benchmark saja) | ~2 GB |
 
-# Verifikasi: node 65 harus punya positive_prompt & negative_prompt
-python3 -c "
-import json
-d=json.load(open('workflow_api.json'))
-print(list(d['65']['inputs'].keys()))
-"
-```
+**v1 dipertahankan** supaya rollback tidak perlu rebuild image.
 
-### 2. Pilih mode model
-
-**MODE=volume (direkomendasikan)**
-- Buat Network Volume di RunPod (~50GB, ~$3.5/bulan)
-- Download model ke volume (jalankan sekali):
-  ```bash
-  python3 download_models.py /runpod-volume/ComfyUI/models
-  ```
-- Attach volume ke endpoint di Console
-- Image tetap kecil (~8GB), cold start cepat
-
-**MODE=bundle**
-- Tanpa volume, model ikut di image
-- Build: `docker build --build-arg MODE=bundle -t ... .`
-- Image jadi ~40GB (butuh registry kuota besar)
-
-## Build & Deploy
-
-```bash
-# Build
-docker build -t akarai-wan22-animate:latest .
-
-# Push
-docker tag akarai-wan22-animate:latest <user>/akarai-wan22-animate:latest
-docker push <user>/akarai-wan22-animate:latest
-```
-
-### Setting Endpoint di RunPod Console
+## Setting Endpoint (Vast.ai)
 
 | Setting | Nilai |
 |---|---|
-| Type | Serverless |
+| Endpoint ID | `36584` (`wan22-video`) |
+| Workergroup | `46741` |
+| Backend | `comfyui-json` |
 | GPU | RTX 5090 / 48GB+ VRAM |
-| Container Image | `<user>/akarai-wan22-animate:latest` |
-| Network Volume | (MODE=volume) pilih volume yang sudah diisi model |
 | Min Workers | 0 (hemat) |
-| Max Workers | 3 (sesuai kebutuhan) |
-| Idle Timeout | 5 detik |
-| FlashBoot | ON |
+| Kriteria host | RAM ≥ 64 GB, bw ≥ 1000, cuda ≥ 13.0 |
 
-### Environment Variables (opsional)
-
-```
-BUCKET_ENDPOINT_URL       = https://xxx.r2.cloudflarestorage.com
-BUCKET_ACCESS_KEY_ID      = xxx
-BUCKET_SECRET_ACCESS_KEY  = xxx
-BUCKET_NAME               = akarai-output
-MODE                      = volume   (default)
-```
-
-Kalau S3 tidak diset, output dikembalikan sebagai base64.
-Peringatan: video 15 detik ~5-15MB, base64 jadi ~2x lipat.
-
-## Test
+## Deploy / Update
 
 ```bash
-export RUNPOD_ENDPOINT_ID=xxxxx
-export RUNPOD_API_KEY=xxx
+cd /home/ubuntu/rakabot-serverless
 
-# Siapkan file test
-#   test_ref.png    -> foto referensi
-#   test_motion.mp4 -> video referensi 720x1280, max 15 detik
+# 1. Ubah Dockerfile.vast / workflow
+# 2. Commit & push → GH Actions build otomatis
+git add -A && git commit -m "..." && git push origin main
 
-python3 test_local.py
+# 3. Pantau build
+#    https://github.com/rakaseptian/rakabot/actions
 ```
+
+**Workflow** (`workflow_serverless_animate.json`) dibaca **FRESH dari disk tiap render**
+oleh `vast_wan.py` — perubahan workflow **tidak butuh rebuild image**.
+
+## Batas
+
+- Durasi video referensi maks **14,57 detik** (`VIDEO_DUR_MAX`, `bot.py:100`)
+- 437 frame @30fps
 
 ## Catatan Penting
 
-1. **Batas request RunPod**: 10MB (`/run`), 20MB (`/runsync`).
-   Video 15 detik + foto bisa mendekati batas. Kalau mentok,
-   pakai presigned URL (belum diimplement di handler v1).
-
-2. **Cold start** tetap ada (~30-90 detik) untuk load model ke VRAM.
-   FlashBoot membantu.
-
-3. **Durasi video** dibatasi 15 detik (437 frame @30fps).
-
-4. **Workflow belum diuji di serverless** — baru diuji di pod.
-   Setelah endpoint jadi, wajib test end-to-end dulu.
-
-## Status
-
-- [x] Struktur folder
-- [x] handler.py (valid syntax)
-- [x] Dockerfile revisi (model tidak di-bundle)
-- [x] URL model diverifikasi (6/6 HTTP 200)
-- [x] download_models.py
-- [x] start.sh (symlink volume)
-- [ ] **Fix nama widget** (butuh pod hidup)
-- [ ] Build & push image
-- [ ] Deploy endpoint
-- [ ] Test end-to-end
+1. **`workflow_api.json` dipakai `Dockerfile.vast:178`** — jangan hapus, build akan gagal.
+2. **`requirements.txt` dipakai `Dockerfile.vast:43`** — meski isinya `runpod==1.7.9`,
+   jangan hapus tanpa mengganti isinya.
+3. Jalur RunPod (handler.py/start.sh/Dockerfile) **sudah dihapus** —
+   riwayat git tetap menyimpannya bila perlu dipulihkan.
+4. `object_info.json` adalah snapshot **usang** (6 Sep) — jangan dijadikan acuan.

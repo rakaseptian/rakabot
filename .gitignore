@@ -1,4 +1,60 @@
-# Hasil render (besar, jangan masuk repo)
+# ============================================================
+# REPO INI PUBLIK — jangan pernah commit kredensial / state mesin
+# ============================================================
+
+# --- Kredensial & state (BAHAYA kalau bocor) ---
+.env
+*.env
+vast_instance.json
+pin_config.json
+endpoint_config.json
+wg*.json
+*_backup*.json
+
+# --- Backup & arsip ---
+*.bak
+*.bak_*
+*.json.bak*
+*.orig
+*.rej
+
+# --- Log & cache ---
+*.log
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# --- Hasil render (besar) ---
 *.mp4
 *.png
+*.jpg
+*.jpeg
+*.webp
 !test_ref_small.jpg
+
+# --- Script ops / probe / tes lokal (tidak dipakai produksi) ---
+monitor*.py
+monitor*.sh
+probe_*.py
+test_*.py
+tes_*.sh
+cek_*.py
+fix_template_filters.py
+fix_video_node.py
+ganti_workflow.py
+patch_wg.sh
+set_wg_price_cap.py
+verify_scale.sh
+start_tes_v6.sh
+buat_template_v2.py
+buat_template_v3.py
+buat_template_v4_5090.py
+buat_template_v5_5090.py
+buat_template_prebaked.py
+workflow_api.json.bak*
+workflow_serverless_animate.json.bak*
+workflow_v2_*.json*
+
+# --- Snapshot usang ---
+object_info.json
