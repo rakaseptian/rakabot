@@ -1,0 +1,46 @@
+name: Retag GHCR Image
+
+# Menyalin manifest image dari satu tag ke tag lain TANPA menarik layer
+# (tidak mengunduh ~36 GB, selesai dalam ~1 menit).
+#
+# KENAPA: tag `latest` sudah ter-cache di disk host Vast (45511/144661/145191).
+# Docker TIDAK menarik ulang tag yang sudah ada di host -> worker bisa memakai
+# image LAMA (tanpa model v2). Tag BARU (`v2`) belum pernah ada di host mana pun
+# -> host WAJIB pull -> dijamin mendapat image baru.
+#
+# Jalankan dari tab Actions -> "Retag GHCR Image" -> Run workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: 'Tag sumber'
+        default: 'latest'
+        required: true
+      target_tag:
+        description: 'Tag tujuan'
+        default: 'v2'
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Retag (salin manifest, tanpa tarik layer)
+        run: |
+          SRC="ghcr.io/${{ github.repository_owner }}/akarai-wan22-animate:${{ inputs.source_tag }}"
+          DST="ghcr.io/${{ github.repository_owner }}/akarai-wan22-animate:${{ inputs.target_tag }}"
+          echo "sumber : $SRC"
+          echo "tujuan : $DST"
+          docker buildx imagetools create -t "$DST" "$SRC"
+
+      - name: Verifikasi tag tujuan
+        run: |
+          docker buildx imagetools inspect ghcr.io/${{ github.repository_owner }}/akarai-wan22-animate:${{ inputs.target_tag }}
