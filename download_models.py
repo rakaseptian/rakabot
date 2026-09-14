@@ -30,6 +30,15 @@ MODELS = [
         17549,
     ),
     (
+        # v2 (2026-09-14): mengikuti workflow TERBARU Pak Raka.
+        # Lebih kecil dari v1 (17.3 vs 18.4 GB).
+        "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/"
+        "Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors",
+        "diffusion_models",
+        "Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors",
+        16513,
+    ),
+    (
         "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/"
         "umt5-xxl-enc-bf16.safetensors",
         "text_encoders",

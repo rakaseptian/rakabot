@@ -1,157 +1,24 @@
 {
-  "42": {
-    "class_type": "GetImageSizeAndCount",
+  "22": {
+    "class_type": "WanVideoModelLoader",
     "inputs": {
-      "image": [
-        "28",
-        0
-      ]
-    }
-  },
-  "152": {
-    "class_type": "PixelPerfectResolution",
-    "inputs": {
-      "original_image": [
-        "63",
+      "compile_args": [
+        "35",
         0
       ],
-      "image_gen_width": [
-        "150",
-        0
-      ],
-      "image_gen_height": [
-        "151",
-        0
-      ],
-      "resize_mode": "Just Resize"
-    }
-  },
-  "96": {
-    "class_type": "ImageCropByMaskAndResize",
-    "inputs": {
-      "image": [
-        "63",
-        0
-      ],
-      "mask": [
-        "120",
-        0
-      ],
-      "base_resolution": 512,
-      "padding": 0,
-      "min_crop_resolution": 128,
-      "max_crop_resolution": 1024
-    }
-  },
-  "28": {
-    "class_type": "WanVideoDecode",
-    "inputs": {
-      "vae": [
-        "38",
-        0
-      ],
-      "samples": [
-        "27",
-        0
-      ],
-      "enable_vae_tiling": false,
-      "tile_x": 272,
-      "tile_y": 272,
-      "tile_stride_x": 144,
-      "tile_stride_y": 128,
-      "normalization": "default"
-    }
-  },
-  "50": {
-    "class_type": "WanVideoSetBlockSwap",
-    "inputs": {
-      "model": [
-        "48",
-        0
-      ],
-      "block_swap_args": [
-        "51",
-        0
-      ]
-    }
-  },
-  "48": {
-    "class_type": "WanVideoSetLoRAs",
-    "inputs": {
-      "model": [
-        "22",
-        0
-      ],
-      "lora": [
-        "171",
-        0
-      ]
-    }
-  },
-  "120": {
-    "class_type": "FaceMaskFromPoseKeypoints",
-    "inputs": {
-      "pose_kps": [
-        "73",
-        1
-      ],
-      "person_index": 0
-    }
-  },
-  "38": {
-    "class_type": "WanVideoVAELoader",
-    "inputs": {
-      "compile_args": null,
-      "model_name": "wan_2.1_vae.safetensors",
-      "precision": "bf16"
-    }
-  },
-  "71": {
-    "class_type": "CLIPVisionLoader",
-    "inputs": {
-      "clip_name": "clip_vision_h.safetensors"
-    }
-  },
-  "64": {
-    "class_type": "ImageResizeKJv2",
-    "inputs": {
-      "image": [
-        "57",
-        0
-      ],
-      "mask": null,
-      "width": [
-        "150",
-        0
-      ],
-      "height": [
-        "151",
-        0
-      ],
-      "upscale_method": "lanczos",
-      "keep_proportion": "pad_edge_pixel",
-      "pad_color": "0, 0, 0",
-      "crop_position": "top",
-      "divisible_by": 16,
-      "device": "cpu"
-    }
-  },
-  "35": {
-    "class_type": "WanVideoTorchCompileSettings",
-    "inputs": {
-      "backend": "inductor",
-      "fullgraph": true,
-      "mode": "default",
-      "dynamic": false,
-      "dynamo_cache_size_limit": 64,
-      "compile_transformer_blocks_only": true,
-      "dynamo_recompile_limit": 128
-    }
-  },
-  "150": {
-    "class_type": "INTConstant",
-    "inputs": {
-      "value": 720
+      "block_swap_args": null,
+      "lora": null,
+      "vram_management_args": null,
+      "extra_model": null,
+      "fantasytalking_model": null,
+      "multitalk_model": null,
+      "fantasyportrait_model": null,
+      "model": "Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors",
+      "base_precision": "bf16",
+      "quantization": "disabled",
+      "load_device": "offload_device",
+      "attention_mode": "sdpa",
+      "rms_norm_function": "default"
     }
   },
   "27": {
@@ -171,7 +38,10 @@
       ],
       "samples": null,
       "feta_args": null,
-      "context_options": null,
+      "context_options": [
+        "301",
+        0
+      ],
       "cache_args": [
         "300",
         0
@@ -186,7 +56,7 @@
       "uni3c_embeds": null,
       "multitalk_embeds": null,
       "freeinit_args": null,
-      "steps": 4,
+      "steps": 6,
       "cfg": 1,
       "shift": 5.0,
       "seed": 832341536802429,
@@ -201,17 +71,23 @@
       "add_noise_to_samples": false
     }
   },
-  "65": {
-    "class_type": "WanVideoTextEncodeCached",
+  "28": {
+    "class_type": "WanVideoDecode",
     "inputs": {
-      "extender_args": null,
-      "model_name": "umt5-xxl-enc-bf16.safetensors",
-      "precision": "bf16",
-      "positive_prompt": "The character is dancing in the room same person from the reference image same background same clothes",
-      "negative_prompt": "changing face, changing clothes, changing background, morphing, blurry, distorted",
-      "quantization": "disabled",
-      "use_disk_cache": false,
-      "device": "gpu"
+      "vae": [
+        "38",
+        0
+      ],
+      "samples": [
+        "27",
+        0
+      ],
+      "enable_vae_tiling": false,
+      "tile_x": 272,
+      "tile_y": 272,
+      "tile_stride_x": 144,
+      "tile_stride_y": 128,
+      "normalization": "default"
     }
   },
   "30": {
@@ -235,50 +111,77 @@
       "save_output": true
     }
   },
-  "73": {
-    "class_type": "DWPreprocessor",
+  "35": {
+    "class_type": "WanVideoTorchCompileSettings",
+    "inputs": {
+      "backend": "inductor",
+      "fullgraph": false,
+      "mode": "default",
+      "dynamic": false,
+      "dynamo_cache_size_limit": 64,
+      "compile_transformer_blocks_only": true,
+      "dynamo_recompile_limit": 128
+    }
+  },
+  "38": {
+    "class_type": "WanVideoVAELoader",
+    "inputs": {
+      "compile_args": null,
+      "model_name": "wan_2.1_vae.safetensors",
+      "precision": "bf16"
+    }
+  },
+  "42": {
+    "class_type": "GetImageSizeAndCount",
     "inputs": {
       "image": [
-        "63",
+        "201",
+        0
+      ]
+    }
+  },
+  "48": {
+    "class_type": "WanVideoSetLoRAs",
+    "inputs": {
+      "model": [
+        "22",
         0
       ],
-      "resolution": [
-        "152",
+      "lora": [
+        "171",
+        0
+      ]
+    }
+  },
+  "50": {
+    "class_type": "WanVideoSetBlockSwap",
+    "inputs": {
+      "model": [
+        "48",
         0
       ],
-      "detect_hand": "enable",
-      "detect_body": "enable",
-      "detect_face": "enable",
-      "bbox_detector": "yolox_l.torchscript.pt",
-      "pose_estimator": "dw-ll_ucoco_384_bs5.torchscript.pt",
-      "scale_stick_for_xinsr_cn": "disable"
+      "block_swap_args": [
+        "51",
+        0
+      ]
+    }
+  },
+  "51": {
+    "class_type": "WanVideoBlockSwap",
+    "inputs": {
+      "blocks_to_swap": 30,
+      "offload_img_emb": false,
+      "offload_txt_emb": false,
+      "use_non_blocking": true,
+      "vace_blocks_to_swap": 0,
+      "prefetch_blocks": 1,
+      "block_swap_debug": false
     }
   },
   "57": {
     "class_type": "LoadImage",
     "inputs": {
       "image": "__REF_IMAGE__"
-    }
-  },
-  "63": {
-    "class_type": "VHS_LoadVideo",
-    "inputs": {
-      "meta_batch": null,
-      "vae": null,
-      "custom_width": [
-        "150",
-        0
-      ],
-      "custom_height": [
-        "151",
-        0
-      ],
-      "video": "__REF_VIDEO__",
-      "force_rate": 30,
-      "frame_load_cap": 437,
-      "skip_first_frames": 0,
-      "select_every_nth": 1,
-      "format": "None"
     }
   },
   "62": {
@@ -318,12 +221,73 @@
         "63",
         1
       ],
-      "force_offload": false,
-      "frame_window_size": 77,
+      "force_offload": true,
+      "frame_window_size": [
+        "63",
+        1
+      ],
       "colormatch": "disabled",
       "pose_strength": 1.0,
       "face_strength": 1.0,
-      "tiled_vae": true
+      "tiled_vae": false
+    }
+  },
+  "63": {
+    "class_type": "VHS_LoadVideo",
+    "inputs": {
+      "meta_batch": null,
+      "vae": null,
+      "custom_width": [
+        "150",
+        0
+      ],
+      "custom_height": [
+        "151",
+        0
+      ],
+      "video": "__REF_VIDEO__",
+      "force_rate": 30,
+      "frame_load_cap": 437,
+      "skip_first_frames": 0,
+      "select_every_nth": 1,
+      "format": "None"
+    }
+  },
+  "64": {
+    "class_type": "ImageResizeKJv2",
+    "inputs": {
+      "image": [
+        "57",
+        0
+      ],
+      "mask": null,
+      "width": [
+        "150",
+        0
+      ],
+      "height": [
+        "151",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "keep_proportion": "crop",
+      "pad_color": "0, 0, 0",
+      "crop_position": "center",
+      "divisible_by": 16,
+      "device": "cpu"
+    }
+  },
+  "65": {
+    "class_type": "WanVideoTextEncodeCached",
+    "inputs": {
+      "extender_args": null,
+      "model_name": "umt5-xxl-enc-bf16.safetensors",
+      "precision": "bf16",
+      "positive_prompt": "The character is dancing in the room same person from the reference image same background same clothes",
+      "negative_prompt": "changing face, changing clothes, changing background, morphing, blurry, distorted",
+      "quantization": "disabled",
+      "use_disk_cache": false,
+      "device": "gpu"
     }
   },
   "70": {
@@ -348,16 +312,86 @@
       "ratio": 0.5
     }
   },
-  "51": {
-    "class_type": "WanVideoBlockSwap",
+  "71": {
+    "class_type": "CLIPVisionLoader",
     "inputs": {
-      "blocks_to_swap": 12,
-      "offload_img_emb": false,
-      "offload_txt_emb": false,
-      "use_non_blocking": true,
-      "vace_blocks_to_swap": 0,
-      "prefetch_blocks": 1,
-      "block_swap_debug": false
+      "clip_name": "clip_vision_h.safetensors"
+    }
+  },
+  "73": {
+    "class_type": "DWPreprocessor",
+    "inputs": {
+      "image": [
+        "63",
+        0
+      ],
+      "resolution": [
+        "152",
+        0
+      ],
+      "detect_hand": "enable",
+      "detect_body": "enable",
+      "detect_face": "enable",
+      "bbox_detector": "yolox_l.torchscript.pt",
+      "pose_estimator": "dw-ll_ucoco_384_bs5.torchscript.pt",
+      "scale_stick_for_xinsr_cn": "disable"
+    }
+  },
+  "96": {
+    "class_type": "ImageCropByMaskAndResize",
+    "inputs": {
+      "image": [
+        "63",
+        0
+      ],
+      "mask": [
+        "120",
+        0
+      ],
+      "base_resolution": 512,
+      "padding": 16,
+      "min_crop_resolution": 128,
+      "max_crop_resolution": 512
+    }
+  },
+  "120": {
+    "class_type": "FaceMaskFromPoseKeypoints",
+    "inputs": {
+      "pose_kps": [
+        "73",
+        1
+      ],
+      "person_index": 0
+    }
+  },
+  "150": {
+    "class_type": "INTConstant",
+    "inputs": {
+      "value": 480
+    }
+  },
+  "151": {
+    "class_type": "INTConstant",
+    "inputs": {
+      "value": 832
+    }
+  },
+  "152": {
+    "class_type": "PixelPerfectResolution",
+    "inputs": {
+      "original_image": [
+        "63",
+        0
+      ],
+      "image_gen_width": [
+        "150",
+        0
+      ],
+      "image_gen_height": [
+        "151",
+        0
+      ],
+      "resize_mode": "Just Resize"
     }
   },
   "171": {
@@ -379,32 +413,40 @@
       "merge_loras": false
     }
   },
-  "22": {
-    "class_type": "WanVideoModelLoader",
+  "200": {
     "inputs": {
-      "compile_args": [
-        "35",
+      "ref_image": [
+        "64",
         0
       ],
-      "block_swap_args": null,
-      "lora": null,
-      "vram_management_args": null,
-      "extra_model": null,
-      "fantasytalking_model": null,
-      "multitalk_model": null,
-      "fantasyportrait_model": null,
-      "model": "Wan2_2-Animate-14B_fp8_e4m3fn_scaled_KJ.safetensors",
-      "base_precision": "fp16_fast",
-      "quantization": "disabled",
-      "load_device": "offload_device",
-      "attention_mode": "sdpa",
-      "rms_norm_function": "default"
+      "pose_images": [
+        "63",
+        0
+      ],
+      "include_body": true,
+      "include_hand": true,
+      "include_face": true
+    },
+    "class_type": "MimicMotionGetPoses",
+    "_meta": {
+      "title": "MimicMotion GetPoses (ganti DWPreprocessor utk pose)"
     }
   },
-  "151": {
-    "class_type": "INTConstant",
+  "201": {
     "inputs": {
-      "value": 1280
+      "images": [
+        "28",
+        0
+      ],
+      "start_index": 0,
+      "num_frames": [
+        "63",
+        1
+      ]
+    },
+    "class_type": "GetImageRangeFromBatch",
+    "_meta": {
+      "title": "Trim ke durasi video referensi"
     }
   },
   "300": {
@@ -416,6 +458,22 @@
       "cache_device": "offload_device",
       "use_coefficients": true,
       "mode": "e"
+    }
+  },
+  "301": {
+    "inputs": {
+      "context_schedule": "static_standard",
+      "context_frames": 81,
+      "context_stride": 4,
+      "context_overlap": 32,
+      "freenoise": true,
+      "verbose": false,
+      "fuse_method": "linear",
+      "reference_latent": null
+    },
+    "class_type": "WanVideoContextOptions",
+    "_meta": {
+      "title": "WanVideoContextOptions (workflow #2 Pak Raka)"
     }
   }
 }
