@@ -65,7 +65,8 @@ pose **per frame**. Wajah **tidak disentuh** (`[401]` + `face_strength 1.0`).
    ```bash
    python3 .../cek_workflow_motion_control.py --kunci
    ```
-4. **Backup pose lama** (MimicMotion): `/tmp/workflow_PRODUKSI_MimicMotion_20260915_065122.json`
+4. **Backup pose lama** (MimicMotion): `arsip/motion-control/workflow_SEBELUM_motion_control.json`
+   (salinan sahih dari `git HEAD~1`, md5 `66892a57117a`)
 
 ## Berkas di folder ini
 
@@ -84,3 +85,19 @@ pose **per frame**. Wajah **tidak disentuh** (`[401]` + `face_strength 1.0`).
   tanpa update template/workergroup.
 - Host yang sudah punya cache image `:v3` = **45511** (render berikutnya instan).
 - Keep-alive ping (opsi hemat): `/home/ubuntu/rakabot/keepalive_guard.py`.
+
+## Arsip lengkap
+
+Salinan cadangan tersimpan permanen di `/home/ubuntu/rakabot/arsip/motion-control/`:
+
+| File | Isi |
+|---|---|
+| `workflow_SEBELUM_motion_control.json` | Produksi LAMA (pose MimicMotion `[200]`), dari git HEAD~1 |
+| `workflow_yang_dipromosikan.json` | Workflow pose baru yang jadi acuan |
+| `vast_wan.py.SEBELUM_OPTIOND` | Kode bot sebelum perubahan Opsi D |
+| `.env.SEBELUM_OPTIOND` | Konfigurasi sebelum perubahan Opsi D |
+
+> ⚠️ **Catatan koreksi (15-09-2026):** pernah ada file bernama
+> `/tmp/workflow_PRODUKSI_MimicMotion_*.json` yang **salah label** — isinya
+> ternyata workflow uji 90 frame (pose baru), bukan produksi MimicMotion.
+> Sudah diganti dengan salinan sahih dari git.

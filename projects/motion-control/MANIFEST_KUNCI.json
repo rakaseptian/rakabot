@@ -4,12 +4,10 @@
   "dikunci_pada": "2026-09-15",
   "dikunci_oleh": "Pak Raka",
   "catatan": "Workflow ini adalah ACUAN TETAP untuk semua render selanjutnya. Setiap perubahan WAJIB mendapat izin eksplisit dari Pak Raka lebih dulu.",
-
   "file_produksi": "/home/ubuntu/rakabot-serverless/workflow_serverless_animate.json",
   "md5": "fc029cad3e7bc48791d62b5c22af39c0",
   "ukuran_byte": 8858,
   "jumlah_node": 25,
-
   "spesifikasi": {
     "resolusi": "720x1280",
     "fps": 30,
@@ -28,7 +26,6 @@
     "context_overlap": 32,
     "blocks_to_swap": 30
   },
-
   "asal_usul": "Menggantikan MimicMotionGetPoses ([200]) yang menyebabkan gerakan tangan aneh di detik awal (akar: np.polyfit global rescale a=0,755).",
   "bukti_uji": {
     "uji_90_frame": "/tmp/wan_media/hasil_28a635f2.mp4",
@@ -36,10 +33,10 @@
     "verifikasi": "437 frame, 0 gelap, 0 blur, 0 macet",
     "biaya": "$0,45 (39 menit)"
   },
-
-  "backup_pose_lama": "/tmp/workflow_PRODUKSI_MimicMotion_20260915_065122.json",
+  "backup_pose_lama": "/home/ubuntu/rakabot/arsip/motion-control/workflow_SEBELUM_motion_control.json (dari git HEAD~1, md5 66892a57117a)",
   "salinan_acuan": [
     "/home/ubuntu/rakabot-serverless/projects/motion-control/workflow_motion_control.json",
     "/home/ubuntu/rakabot-serverless/projects/motion-control/workflow_MOTION_CONTROL_KUNCI.json"
-  ]
+  ],
+  "arsip_lengkap": "/home/ubuntu/rakabot/arsip/motion-control/"
 }
