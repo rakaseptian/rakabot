@@ -1,0 +1,45 @@
+{
+  "project": "motion-control",
+  "status": "TERKUNCI — JANGAN DIUBAH TANPA IZIN PAK RAKA",
+  "dikunci_pada": "2026-09-15",
+  "dikunci_oleh": "Pak Raka",
+  "catatan": "Workflow ini adalah ACUAN TETAP untuk semua render selanjutnya. Setiap perubahan WAJIB mendapat izin eksplisit dari Pak Raka lebih dulu.",
+
+  "file_produksi": "/home/ubuntu/rakabot-serverless/workflow_serverless_animate.json",
+  "md5": "fc029cad3e7bc48791d62b5c22af39c0",
+  "ukuran_byte": 8858,
+  "jumlah_node": 25,
+
+  "spesifikasi": {
+    "resolusi": "720x1280",
+    "fps": 30,
+    "steps": 6,
+    "cfg": 1,
+    "scheduler": "dpm++_sde",
+    "shift": 5.0,
+    "pose_node": "WanVideoUniAnimateDWPoseDetector ([402])",
+    "pose_wiring": "[402] slot 0 -> [62].pose_images",
+    "face_node": "PoseAndFaceDetection ([401])",
+    "face_wiring": "[401] slot 1 -> [62].face_images",
+    "face_strength": 1.0,
+    "pose_strength": 1.0,
+    "frame_load_cap": 0,
+    "context_frames": 81,
+    "context_overlap": 32,
+    "blocks_to_swap": 30
+  },
+
+  "asal_usul": "Menggantikan MimicMotionGetPoses ([200]) yang menyebabkan gerakan tangan aneh di detik awal (akar: np.polyfit global rescale a=0,755).",
+  "bukti_uji": {
+    "uji_90_frame": "/tmp/wan_media/hasil_28a635f2.mp4",
+    "render_penuh": "/tmp/wan_media/hasil_5fd6a628.mp4",
+    "verifikasi": "437 frame, 0 gelap, 0 blur, 0 macet",
+    "biaya": "$0,45 (39 menit)"
+  },
+
+  "backup_pose_lama": "/tmp/workflow_PRODUKSI_MimicMotion_20260915_065122.json",
+  "salinan_acuan": [
+    "/home/ubuntu/rakabot-serverless/projects/motion-control/workflow_motion_control.json",
+    "/home/ubuntu/rakabot-serverless/projects/motion-control/workflow_MOTION_CONTROL_KUNCI.json"
+  ]
+}
